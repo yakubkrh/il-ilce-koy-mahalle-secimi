@@ -1,0 +1,264 @@
+﻿
+@{
+    Layout = null;
+}
+
+
+<!DOCTYPE html>
+
+<html lang="tr">
+
+<head>
+    <title>Adres Sorgulama</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="icon" href="~/Content/assets/img/icon.png">
+    <link rel="stylesheet" type="text/css" href="https://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="~/Content/assets/admin-tools/admin-forms/css/admin-forms.css">
+    
+    <link rel="stylesheet" type="text/css" href="~/Content/assets/skin/default_skin/css/theme.css">
+    <style>
+
+
+        .container {
+            display: block;
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+            .container input {
+                position: absolute;
+                opacity: 0;
+                cursor: pointer;
+            }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 25px;
+            width: 25px;
+            background-color: white;
+        }
+
+        .container:hover input ~ .checkmark {
+            background-color: #FFC841;
+        }
+
+        .container input:checked ~ .checkmark {
+            background-color: #FFC841;
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .container input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .container .checkmark:after {
+            left: 9px;
+            top: 5px;
+            width: 5px;
+            height: 12px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            -webkit-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+    </style>
+</head>
+<body>
+
+    <section class="container">
+        <div class="row" style="margin-top:17%">
+            <div class="col-md-5">
+                <div class="panel">
+                    <div class="br-b panel-heading bg-warning text-center"><span class="panel-title"></span><h style="text-shadow: 1px 2px 5px #000; font-size: xx-large;">Adres Sorgula</h></div>
+                    <div class="admin-form">
+                        <div class="panel-body">
+                            <select id="select-sehirler" class="form-control"></select><br /><br />
+                            <select id="select-ilceler" class="form-control"></select><br /><br />
+                            <select id="select-koy" class="form-control"></select><br /><br />
+                            <select id="select-mahalleler" class="form-control"></select><br />
+                            <div class="text-center"><button type="button" id="bul" onclick="konumAra()" class="btn btn-default btn-success text-center">BUL</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="panel">
+                    <div class="br-b panel-heading bg-warning text-center"><span class="panel-title"></span><h style="text-shadow: 1px 2px 5px #000; font-size: xx-large;">Harita Görünümü</h></div>
+                    <div class="admin-form">
+                        <div class="panel-body">
+                            <div id="map" style="width: 600px; height:350px; margin:0 auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="~/Content/sweetalert.min.js"></script>
+    <script src="~/Content/plugins/core.min.js"></script>
+    <script src="~/Content/assets/js/utility/utility.js"></script>
+    <script src="~/Content/assets/js/demo/demo.js"></script>
+    <script src="~/Content/assets/js/main.js"></script>
+    <link href="~/Content/LoaderCSS.css" rel="stylesheet" />
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=bc4a7017-2600-4082-8150-edc303028ef5&lang=en_US" type="text/javascript">
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+          
+        });
+    
+
+
+
+
+        $(function ($) {
+            $('#select-sehirler').empty();
+            $('#select-sehirler').append('<option selected="true" disabled>İl Seçiniz</option>');
+            $('#select-sehirler').prop('selectedIndex', 0);
+
+
+            $.getJSON('../Content/il.json', function (data) {
+                $.each(data, function (a, b) {
+                    $('#select-sehirler').append($('<option></option>').attr('value', b.id).text(b.name));
+                });
+            });
+
+
+            $('#select-ilceler').empty();
+            $('#select-ilceler').append('<option selected="true" disabled>İlçe Seçiniz</option>');
+            $('#select-ilceler').prop('selectedIndex', 0);
+            $(document).ready(function () {
+                $("#select-sehirler").on("change", function () {
+                    let strSehir_ID = $("#select-sehirler").val();
+                    fnIlceler_Doldur(strSehir_ID);
+                    fnMahalleler_Doldur(null);
+                });
+            });
+            fnIlceler_Doldur = (parSehir_ID) => {
+                $('#select-ilceler').empty();
+                $('#select-ilceler').append('<option selected="true" disabled>İlçe Seçiniz</option>');
+                const ilcelerjsonurl = '../Content/ilce.json';
+                $.getJSON(ilcelerjsonurl, function (data) {
+                    $.each(data, function (a, b) {
+                        let strSehir_ID = b.il_id;
+                        if (parSehir_ID === strSehir_ID)
+                            $('#select-ilceler').append($('<option></option>').attr('value', b.id).text(b.name));
+                    });
+                });
+            }
+
+            let objKoy = $('#select-koy');
+            objKoy.empty();
+            objKoy.append('<option selected="true" disabled>Köy Seçiniz</option>');
+            objKoy.prop('selectedIndex', 0);
+            $(document).ready(function () {
+                $("#select-ilceler").on("change", function () {
+                    let strIlce_ID = $(this).val();
+                    fnKoy_Doldur(strIlce_ID);
+                });
+            });
+            fnKoy_Doldur = (parIlce_ID) => {
+                objKoy.empty();
+                objKoy.append('<option selected="true" disabled>Köy Seçiniz</option>');
+                const koyurl = '../Content/koy.json';
+                $.getJSON(koyurl, function (data) {
+                    $.each(data, function (a, b) {
+                        let strIlce_ID = b.ilce_id;
+                        if (parIlce_ID === strIlce_ID)
+                            objKoy.append($('<option></option>').attr('value', b.id).text(b.name));
+                    });
+                });
+            }
+            let objMahalleler = $('#select-mahalleler');
+            objMahalleler.empty();
+            objMahalleler.append('<option selected="true" disabled>Mahalle Seçiniz</option>');
+            objMahalleler.prop('selectedIndex', 0);
+            $(document).ready(function () {
+                $("#select-koy").on("change", function () {
+                    let strIlce_ID = $(this).val();
+                    fnMahalleler_Doldur(strIlce_ID);
+                });
+            });
+            fnMahalleler_Doldur = (parIlce_ID) => {
+                objMahalleler.empty();
+                objMahalleler.append('<option selected="true" disabled>Mahalle Seçiniz</option>');
+                const mahallelerjsonurl = '../Content/mahalle.json';
+                $.getJSON(mahallelerjsonurl, function (data) {
+                    $.each(data, function (a, b) {
+                        let strIlce_ID = b.koy_id;
+                        if (parIlce_ID === strIlce_ID)
+                            objMahalleler.append($('<option></option>').attr('value', b.id).text(b.name));
+                    });
+                });
+            }
+        });
+
+        function konumAra() {
+
+            if ($("#select-sehirler option:selected").val() == "İl Seçiniz" || $("#select-ilceler option:selected").val() == "İlçe Seçiniz" || $("#select-koy option:selected").val() == "Köy Seçiniz" || $("#select-mahalleler option:selected").val() == "Mahalle Seçiniz") {
+                swal({
+                    title: "Lütfen Tüm Alanları Doldurunuz!",
+                    icon: "error",
+                    button: "Tamam!",
+                });
+
+                return false;
+            }
+
+            function init() {
+                var adres = $("#select-mahalleler option:selected").text() + " " + $("#select-ilceler option:selected").text() + "/" + $("#select-sehirler option:selected").text();
+                var myMap = new ymaps.Map('map', {
+                    center: [39.0010842, 30.6773054],
+                    zoom: 9
+                });
+                ymaps.geocode(adres, {
+                    results: 1
+                }).then(function (res) {
+                    var firstGeoObject = res.geoObjects.get(0),
+                        coords = firstGeoObject.geometry.getCoordinates(),
+                        bounds = firstGeoObject.properties.get('boundedBy');
+                    firstGeoObject.options.set('preset', 'islands#darkBlueDotIconWithCaption');
+                    firstGeoObject.properties.set('iconCaption', firstGeoObject.getAddressLine());
+                    myMap.geoObjects.add(firstGeoObject);
+                    myMap.setBounds(bounds, {
+                        checkZoomRange: true
+                    });
+                    //console.log('All the geo object data: ', firstGeoObject.properties.getAll());
+                    //console.log('Type of geo object: %s', firstGeoObject.properties.get('metaDataProperty.GeocoderMetaData.kind'));
+                    //console.log('Object name: %s', firstGeoObject.properties.get('name'));
+                    //console.log('Object description: %s', firstGeoObject.properties.get('description'));
+                    //console.log('Full object description: %s', firstGeoObject.properties.get('text'));
+                    //console.log('\nState: %s', firstGeoObject.getCountry());
+                    //console.log('Municipality: %s', firstGeoObject.getLocalities().join(', '));
+                    //console.log('Address of the object: %s', firstGeoObject.getAddressLine());
+                    //console.log('Name of the building: %s', firstGeoObject.getPremise() || '-');
+                    //console.log('Building number: %s', firstGeoObject.getPremiseNumber() || '-');
+                });
+            }
+
+            ymaps.ready(init);
+        }
+
+    </script>
+
+
+</body>
+
+
+</html>
